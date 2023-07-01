@@ -6,16 +6,14 @@ import os
 from tqdm import tqdm
 from urllib.parse import urlparse
 import tenacity
-
+import aiofiles
 
 # there are 320722 articles
 article_slice = slice(10000)
 
-DOWNLOAD_CHUNK = 1024
-
 progress_bar: tqdm
 
-EXCEPTION_FILE = Path("exceptions.txt")
+MAX_RETRY = 5
 
 
 def get_base_url(url: str) -> str:
@@ -47,10 +45,10 @@ def read_metadata_file(path: Path) -> list[dict]:
 @tenacity.retry(
     retry=(tenacity.retry_if_exception_type((aiohttp.ClientConnectorError,
            aiohttp.ClientOSError, aiohttp.ServerDisconnectedError,))),
-    stop=tenacity.stop_after_attempt(5),
+    stop=tenacity.stop_after_attempt(MAX_RETRY),
     wait=tenacity.wait_random(min=3, max=10))
 async def download_img(session: aiohttp.ClientSession, url: str, filepath: Path):
-    """Downloads the file from the provided URL asynchronously in DOWNLOAD CHUNKS. 
+    """Downloads the file from the provided URL asynchronously. 
 
     Args:
         session (aiohttp.ClientSession): `aiohttp` Client session to connect to URL
@@ -61,28 +59,25 @@ async def download_img(session: aiohttp.ClientSession, url: str, filepath: Path)
         if response.status != 200:
             raise Exception("Response was not 200")
 
-        with open(filepath, "wb") as f:
-            while True:
-                chunk = await response.content.read(DOWNLOAD_CHUNK)
-                await asyncio.sleep(0)  # payload not complete error
-                if not chunk:
-                    break
-                f.write(chunk)
+        async with aiofiles.open(str(filepath), "wb") as f:
+            await f.write(await response.read())
 
 
 async def download_article_media(article: dict):
     """Download all the media of the provided article. Assign ID to each image, and map to it's article and 
     relative position in the article. 
 
-    If download failed, Exception string is stored in the metadata. 
+    Each downloaded media is stored in a directory named by it's article ID. Each directory consists of the media
+    files and metadata files. The images that were successfully downloaded have their metadata in `successful_metadata.json`, 
+    and the images that failed for some reason have their metadata in `exceptions_metadata.json` for each article.
 
     - Has to be a stateless function for parallelism
 
     Args:
-        session (aiohttp.ClientSession): Client session to connect to URLs async
         article (dict): Dictionary with article metadata
     """
-    img_data_list = []
+    successful_img_list = []
+    exceptions_img_list = []
 
     article_dir = Path(article["id"])
     article_dir.mkdir(exist_ok=True)
@@ -105,25 +100,31 @@ async def download_article_media(article: dict):
                 "Id": f"{article['id']}_{idx}",
                 "Image Path": str(article_dir/img_name),
                 "Article Id": article["id"],
+                "Article URL": article["url"],
                 "Article Index": idx,
                 "Image URL": img_url,
-                "Exception": ""
             }
 
             try:
                 _ = await download_img(session, img_url, article_dir/img_name)
+                successful_img_list.append(data)
             except Exception as e:
                 # download failed for some reason
-                data["Exception"] = f"EXCEPTION:::{str(e)}"
-                with EXCEPTION_FILE.open("a") as f:
-                    f.write(
-                        f"Exception on image: {str(data['Image Path'])}, Exception: {str(e)}, URL: {img_url}\n")
-            finally:
-                img_data_list.append(data)
+                try:
+                    Path(data["Image Path"]).unlink(missing_ok=True)
+                except:
+                    pass
+                data["Exception"] = f"[Exception]: {str(e)}"
+                exceptions_img_list.append(data)
 
-    img_metadata_file = article_dir/"metadata.json"
-    with img_metadata_file.open("w") as f:
-        json.dump(img_data_list, f, indent=2)
+    successful_img_metadata_file = article_dir/"successful_metadata.json"
+    with successful_img_metadata_file.open("w") as f:
+        json.dump(successful_img_list, f, indent=2)
+
+    if len(exceptions_img_list) > 0:
+        exceptions_img_metadata_file = article_dir/"exceptions_metadata.json"
+        with exceptions_img_metadata_file.open("w") as f:
+            json.dump(exceptions_img_list, f, indent=2)
 
     progress_bar.update()
 
@@ -136,10 +137,8 @@ async def main():
     # downloads will be placed in this directory
     os.chdir("/media/salkhon/Local Disk/Thesis/downloads")
 
-    EXCEPTION_FILE.unlink(missing_ok=True)
-
     print("Starting downloads...")
-
+    print("Heads up: Download will be slow at start and end.")
     metadata_slice = metadata[article_slice]
 
     global progress_bar
@@ -153,7 +152,6 @@ async def main():
 
     await asyncio.gather(*tasks)
 
-# Run the main function
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main())

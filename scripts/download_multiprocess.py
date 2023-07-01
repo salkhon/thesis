@@ -1,8 +1,6 @@
-from multiprocessing import Pool, TimeoutError
-import requests
+from multiprocessing import Pool
 import json
 from pathlib import Path, PurePath
-import pandas as pd
 from tqdm import tqdm
 import os
 import requests
