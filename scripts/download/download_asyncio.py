@@ -7,13 +7,37 @@ from tqdm import tqdm
 from urllib.parse import urlparse
 import tenacity
 import aiofiles
+import argparse
+
+# argument parsing
+parser = argparse.ArgumentParser()
+parser.add_argument("--download-dir", type=str,
+                    help="Directory where the images will be downloaded")
+parser.add_argument("--metadata", type=str,
+                    help="Metadata file of the article")
+parser.add_argument("--start-idx", type=int, default=0,
+                    help="Starting index of article list slice")
+parser.add_argument("--end-idx", type=int, default=1000,
+                    help="Ending index of article list slice")
+parser.add_argument("--step", type=int, default=1,
+                    help="Step size of articles list slice")
+parser.add_argument("--max-retry", type=int, default=5,
+                    help="Maximum retry count if file download fails")
+
+args = parser.parse_args()
+
+DOWNLOAD_DIR = Path(args.download_dir)
+METADATA_FILE = Path(args.metadata)
+
+START_IDX = args.start_idx
+END_IDX = args.end_idx
+STEP = args.step
+MAX_RETRY = args.max_retry
 
 # there are 320722 articles
-article_slice = slice(10000)
+article_slice = slice(START_IDX, END_IDX, STEP)
 
 progress_bar: tqdm
-
-MAX_RETRY = 5
 
 
 def get_base_url(url: str) -> str:
@@ -131,11 +155,10 @@ async def download_article_media(article: dict):
 
 async def main():
     print("reading metadata...")
-    metadata = read_metadata_file(
-        Path("/media/salkhon/Local Disk/Thesis/data/english.metadata"))
+    metadata = read_metadata_file(METADATA_FILE)
     print(f"metadata read, there are {len(metadata)} articles")
     # downloads will be placed in this directory
-    os.chdir("/media/salkhon/Local Disk/Thesis/downloads")
+    os.chdir(DOWNLOAD_DIR)
 
     print("Starting downloads...")
     print("Heads up: Download will be slow at start and end.")

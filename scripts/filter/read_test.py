@@ -2,7 +2,7 @@ from PIL import Image
 import os
 from pathlib import Path
 
-os.chdir("/media/salkhon/Local Disk/Thesis/downloads")
+os.chdir("/home/salkhon/repo/Thesis/downloads")
 
 
 if __name__ == "__main__":
