@@ -1,8 +1,20 @@
 import json
 from pathlib import Path
 import os
+import argparse
 
-DUMP_PATH = Path("/media/salkhon/Local Disk/Thesis/all_exceptions.json")
+# argument parsing
+parser = argparse.ArgumentParser()
+parser.add_argument("--imgdir", type=str,
+                    help="Directory where the images will be found")
+parser.add_argument("--output", type=str,
+                    help="Where to place the compilation")
+
+args = parser.parse_args()
+
+
+IMGDIR = Path(args.imgdir)
+DUMP_PATH = Path(args.output)
 
 
 def get_all_exceptions_data() -> list[dict]:
@@ -20,9 +32,9 @@ def get_all_exceptions_data() -> list[dict]:
 
 
 if __name__ == "__main__":
-    os.chdir("/media/salkhon/Local Disk/Thesis/downloads")
+    os.chdir(IMGDIR)
     exceptions_metadata_list = get_all_exceptions_data()
     print("Total Exceptions: ", len(exceptions_metadata_list))
 
-    with DUMP_PATH.open("w") as f:
+    with DUMP_PATH.open("a") as f:
         json.dump(exceptions_metadata_list, f, indent=2)

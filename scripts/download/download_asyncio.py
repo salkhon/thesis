@@ -154,6 +154,7 @@ async def download_article_media(article: dict):
 
 
 async def main():
+    print(f"Download from {START_IDX} to {END_IDX}...")
     print("reading metadata...")
     metadata = read_metadata_file(METADATA_FILE)
     print(f"metadata read, there are {len(metadata)} articles")
