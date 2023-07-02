@@ -13,9 +13,9 @@ Here each command flag stands for:
 | Flag | Meaning |
 | --- | --- |
 | `-s` | Slice length. Will break down the download into this many slices with cool-down periods in between to stop the server from blocking session |
-| `-m` | Metadata file path |
-| `-d` | Download directory |
-| `-c` | Coodown period in seconds | 
+| `-m` | Path to metadata file |
+| `-d` | Path to download directory |
+| `-c` | Cooldown period in seconds | 
 | `-r` | Maximum number of retries for a download |
 
 This shell script will download the image files, and do a read test on them to report the number of images downloaded. It will also compile all exceptions from the image directories into the file `./all_exceptions.json`. 
