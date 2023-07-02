@@ -24,7 +24,7 @@ def get_all_exceptions_data() -> list[dict]:
         list[dict]: List of dict of all exception metadata
     """
     excep_metadata_list: list[dict] = []
-    for metadata_path in Path("./").rglob("*exceptions_metadata.json"):
+    for metadata_path in Path(IMGDIR).rglob("*exceptions_metadata.json"):
         with metadata_path.open() as f:
             metadata_dicts: list[dict] = json.load(f)
         excep_metadata_list.extend(metadata_dicts)
@@ -32,7 +32,6 @@ def get_all_exceptions_data() -> list[dict]:
 
 
 if __name__ == "__main__":
-    os.chdir(IMGDIR)
     exceptions_metadata_list = get_all_exceptions_data()
     print("Total Exceptions: ", len(exceptions_metadata_list))
 

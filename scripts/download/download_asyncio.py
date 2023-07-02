@@ -66,11 +66,7 @@ def read_metadata_file(path: Path) -> list[dict]:
     return metadata
 
 
-@tenacity.retry(
-    retry=(tenacity.retry_if_exception_type((aiohttp.ClientConnectorError,
-           aiohttp.ClientOSError, aiohttp.ServerDisconnectedError,))),
-    stop=tenacity.stop_after_attempt(MAX_RETRY),
-    wait=tenacity.wait_random(min=3, max=10))
+@tenacity.retry(stop=tenacity.stop_after_attempt(MAX_RETRY), wait=tenacity.wait_random(min=3, max=10))
 async def download_img(session: aiohttp.ClientSession, url: str, filepath: Path):
     """Downloads the file from the provided URL asynchronously. 
 
