@@ -1,5 +1,6 @@
 from pathlib import Path
 import argparse
+from tqdm import tqdm
 
 # argument parsing
 parser = argparse.ArgumentParser()
@@ -12,8 +13,8 @@ IMGDIR = Path(args.imgdir)
 
 
 def count_exceptions(img_dir: Path):
-    file_count = sum(1 for _ in img_dir.rglob(
-        '*exceptions_metadata.json') if _.is_file())
+    file_count = sum(1 for _ in tqdm(img_dir.rglob(
+        '*exceptions_metadata.json')) if _.is_file())
     return file_count
 
 
