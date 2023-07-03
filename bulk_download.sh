@@ -37,9 +37,9 @@ total_articles=$(wc -l <"$metadata")
 echo -e "Will download from $metadata, \nto $download_dir, \nmedia from $total_articles articles, \nwith slices of $slice_len"
 
 # download slice by slice
-for start_idx in $(seq 0 $slice_len $total_articles); do
+for ((start_idx = 0; start_idx < total_articles; start_idx += slice_len)); do
     end_idx=$(($start_idx + $slice_len))
-    if [[ $end_idx > $total_articles ]]; then
+    if [[ $end_idx -gt $total_articles ]]; then
         end_idx=$total_articles
     fi
 
@@ -51,7 +51,10 @@ for start_idx in $(seq 0 $slice_len $total_articles); do
         --step 1 \
         --max-retry $max_retry
 
-    sleep $cooldown
+    echo "$start_idx to $end_idx complete"
+    python3 scripts/exceptions/count_exceptions.py --imgdir "$download_dir"
+
+    # sleep $cooldown
 done
 
 echo -e "\n\nDOWNLOAD COMPLETE\n\n"
