@@ -23,6 +23,8 @@ parser.add_argument("--step", type=int, default=1,
                     help="Step size of articles list slice")
 parser.add_argument("--max-retry", type=int, default=5,
                     help="Maximum retry count if file download fails")
+parser.add_argument("--timeout", type=int, default=600, 
+                    help="Timeout for download request, in seconds")
 
 args = parser.parse_args()
 
@@ -33,6 +35,7 @@ START_IDX = args.start_idx
 END_IDX = args.end_idx
 STEP = args.step
 MAX_RETRY = args.max_retry
+TIMEOUT = args.timeout
 
 # there are 320722 articles
 article_slice = slice(START_IDX, END_IDX, STEP)
@@ -83,6 +86,29 @@ async def download_img(session: aiohttp.ClientSession, url: str, filepath: Path)
             await f.write(await response.read())
 
 
+def is_filterout_link(imgurl: str) -> bool:
+    """Filter out download link if it is not an image format file.
+
+    Args:
+        imgurl (str): Image URL
+
+    Returns:
+        bool: Should this download link be filtered out
+    """
+    return not imgurl.endswith(("jpg", "jpeg", "png", "gif", ))
+
+
+def write_dict_to_json_file(json_file: Path, data_dicts: list[dict]):
+    """Write data dict to JSON file.
+
+    Args:
+        json_file (Path): JSON file path
+        data_dicts (list[dict]): List of dictionaries
+    """
+    with json_file.open("w") as f:
+        json.dump(data_dicts, f, indent=2)
+
+
 async def download_article_media(article: dict):
     """Download all the media of the provided article. Assign ID to each image, and map to it's article and 
     relative position in the article. 
@@ -98,6 +124,7 @@ async def download_article_media(article: dict):
     """
     successful_img_list = []
     exceptions_img_list = []
+    filtered_links = []
 
     article_dir = Path(article["id"])
     article_dir.mkdir(exist_ok=True)
@@ -107,6 +134,7 @@ async def download_article_media(article: dict):
     # iterate over each media of this article
     async with aiohttp.ClientSession(trust_env=True) as session:
         for idx, img_url in enumerate(article["media_links"]):
+
             if img_url and img_url[0] == "/":
                 # double //
                 img_url = img_url[1:] if img_url[1] == "/" else img_url
@@ -125,8 +153,12 @@ async def download_article_media(article: dict):
                 "Image URL": img_url,
             }
 
+            if is_filterout_link(img_url):
+                filtered_links.append(data)
+                continue
+
             try:
-                _ = await download_img(session, img_url, article_dir/img_name)
+                _ = await asyncio.wait_for(download_img(session, img_url, article_dir/img_name), TIMEOUT)
                 successful_img_list.append(data)
             except Exception as e:
                 # download failed for some reason
@@ -137,14 +169,16 @@ async def download_article_media(article: dict):
                 data["Exception"] = f"[Exception]: {str(e)}"
                 exceptions_img_list.append(data)
 
-    successful_img_metadata_file = article_dir/"successful_metadata.json"
-    with successful_img_metadata_file.open("w") as f:
-        json.dump(successful_img_list, f, indent=2)
+    write_dict_to_json_file(
+        article_dir/"successful_metadata.json", successful_img_list)
 
     if len(exceptions_img_list) > 0:
-        exceptions_img_metadata_file = article_dir/"exceptions_metadata.json"
-        with exceptions_img_metadata_file.open("w") as f:
-            json.dump(exceptions_img_list, f, indent=2)
+        write_dict_to_json_file(
+            article_dir/"exceptions_metadata.json", exceptions_img_list)
+
+    if len(filtered_links) > 0:
+        write_dict_to_json_file(
+            article_dir/"filtered_links.json", filtered_links)
 
     progress_bar.update()
 

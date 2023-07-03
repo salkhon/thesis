@@ -2,6 +2,7 @@ from PIL import Image
 import os
 from pathlib import Path
 import argparse
+from tqdm import tqdm
 
 # argument parsing
 parser = argparse.ArgumentParser()
@@ -19,7 +20,8 @@ if __name__ == "__main__":
     fail = 0
 
     for fmt in ["*.jpg", "*.png", "*.gif"]:
-        for img_path in Path("./").rglob(fmt):
+        print(f"Checking {fmt} files...")
+        for img_path in tqdm(Path("./").rglob(fmt)):
             try:
                 img = Image.open(img_path)
                 success += 1
