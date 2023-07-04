@@ -57,7 +57,7 @@ for ((start_idx = start; start_idx < total_articles; start_idx += slice_len)); d
 
     echo "$start_idx to $end_idx complete"
     python3 scripts/exceptions/count_exceptions.py --imgdir "$download_dir"
-
+    echo "Cooling down for $cooldown seconds"
     sleep $cooldown
 done
 
