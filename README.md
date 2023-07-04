@@ -7,13 +7,13 @@ Downloads all available media for each each article from a `.metadata` file.
 
 ## Data Organization
 In the passed in download directory, images will be organized as follows:
-- Each article will have a separated directory
-- Inside the directory for each article, the filtered images will be available
+- Each article will have a separate directory
+- Inside the directory for each article, the filtered images will be available on the top level
 - After filtration the images that did not pass the filtration test, will be put inside another subdirectory  called `filtered/` inside the article's directory
 
 
 ## Metadata 
-Metadata for the downloaded, filtered and failed images is kept in JSON format inside each article directory. 
+Each article directory contains metadata about the images for that article. These metadata are kept in JSON files. 
 
 | Metadata File | Content |
 | --- | --- | 
@@ -44,6 +44,7 @@ For example, the download directory tree looks like this for some images:
 │   ├── filtered_metadata.json
 │   └── successful_metadata.json
 | ...
+...
 ```
 
 
@@ -80,5 +81,5 @@ Use the following command to download:
 python scripts/download/download_asyncio.py --download-dir "<YOUR DIR HERE>" --metadata "<YOUR FILE HERE>" --start-idx 0 --end-idx 1000 --step 1 --max-retry 5
 ```
 
-# Filtering Script
+# Filtering Script (Haven't tested yet)
 Filters the data on the basis on image dimensions. Script available in `scripts/filter/filter_images.py`. 
