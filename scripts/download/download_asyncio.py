@@ -189,6 +189,7 @@ async def main():
     metadata = read_metadata_file(METADATA_FILE)
     print(f"metadata read, there are {len(metadata)} articles")
     # downloads will be placed in this directory
+    DOWNLOAD_DIR.mkdir(exist_ok=True)
     os.chdir(DOWNLOAD_DIR)
 
     print("Starting downloads...")
