@@ -11,20 +11,28 @@ import argparse
 
 # argument parsing
 parser = argparse.ArgumentParser()
-parser.add_argument("--download-dir", type=str,
-                    help="Directory where the images will be downloaded")
-parser.add_argument("--metadata", type=str,
-                    help="Metadata file of the article")
-parser.add_argument("--start-idx", type=int, default=0,
-                    help="Starting index of article list slice")
-parser.add_argument("--end-idx", type=int, default=1000,
-                    help="Ending index of article list slice")
-parser.add_argument("--step", type=int, default=1,
-                    help="Step size of articles list slice")
-parser.add_argument("--max-retry", type=int, default=5,
-                    help="Maximum retry count if file download fails")
-parser.add_argument("--timeout", type=int, default=600, 
-                    help="Timeout for download request, in seconds")
+parser.add_argument(
+    "--download-dir", type=str, help="Directory where the images will be downloaded"
+)
+parser.add_argument("--metadata", type=str, help="Metadata file of the article")
+parser.add_argument(
+    "--start-idx", type=int, default=0, help="Starting index of article list slice"
+)
+parser.add_argument(
+    "--end-idx", type=int, default=1000, help="Ending index of article list slice"
+)
+parser.add_argument(
+    "--step", type=int, default=1, help="Step size of articles list slice"
+)
+parser.add_argument(
+    "--max-retry",
+    type=int,
+    default=5,
+    help="Maximum retry count if file download fails",
+)
+parser.add_argument(
+    "--timeout", type=int, default=600, help="Timeout for download request, in seconds"
+)
 
 args = parser.parse_args()
 
@@ -51,27 +59,26 @@ def get_base_url(url: str) -> str:
 
 def read_metadata_file(path: Path) -> list[dict]:
     """Read metadata file, where each line contains a JSON. These JSONs are converted to pytho dicts, and a list
-    of dicts is returned. 
+    of dicts is returned.
 
     Args:
         path (Path): Path to metadata file. File should contain a JSON in each line.
 
     Returns:
-        list[dict]: List of JSONs in the metadata file, converted to List of Dictionaries. 
+        list[dict]: List of JSONs in the metadata file, converted to List of Dictionaries.
     """
     with path.open() as f:
         lines = f.readlines()
 
-    metadata: list[dict] = []
-    for line in lines:
-        metadata.append(json.loads(line))
-
-    return metadata
+    return [json.loads(line) for line in lines]
 
 
-@tenacity.retry(stop=tenacity.stop_after_attempt(MAX_RETRY), wait=tenacity.wait_random(min=3, max=10))
+@tenacity.retry(
+    stop=tenacity.stop_after_attempt(MAX_RETRY),
+    wait=tenacity.wait_random(min=3, max=10),
+)
 async def download_img(session: aiohttp.ClientSession, url: str, filepath: Path):
-    """Downloads the file from the provided URL asynchronously. 
+    """Downloads the file from the provided URL asynchronously.
 
     Args:
         session (aiohttp.ClientSession): `aiohttp` Client session to connect to URL
@@ -86,16 +93,23 @@ async def download_img(session: aiohttp.ClientSession, url: str, filepath: Path)
             await f.write(await response.read())
 
 
-def is_filterout_link(imgurl: str) -> bool:
-    """Filter out download link if it is not an image format file.
+def is_skip_link(imgurl: str) -> bool:
+    """Skip download link if it is not an image format file.
 
     Args:
         imgurl (str): Image URL
 
     Returns:
-        bool: Should this download link be filtered out
+        bool: Should this download link be skipped
     """
-    return not imgurl.endswith(("jpg", "jpeg", "png", "gif", ))
+    return not imgurl.endswith(
+        (
+            "jpg",
+            "jpeg",
+            "png",
+            "gif",
+        )
+    )
 
 
 def write_dict_to_json_file(json_file: Path, data_dicts: list[dict]):
@@ -110,11 +124,11 @@ def write_dict_to_json_file(json_file: Path, data_dicts: list[dict]):
 
 
 async def download_article_media(article: dict):
-    """Download all the media of the provided article. Assign ID to each image, and map to it's article and 
-    relative position in the article. 
+    """Download all the media of the provided article. Assign ID to each image, and map to it's article and
+    relative position in the article.
 
     Each downloaded media is stored in a directory named by it's article ID. Each directory consists of the media
-    files and metadata files. The images that were successfully downloaded have their metadata in `successful_metadata.json`, 
+    files and metadata files. The images that were successfully downloaded have their metadata in `successful_metadata.json`,
     and the images that failed for some reason have their metadata in `exceptions_metadata.json` for each article.
 
     - Has to be a stateless function for parallelism
@@ -124,7 +138,7 @@ async def download_article_media(article: dict):
     """
     successful_img_list = []
     exceptions_img_list = []
-    filtered_links = []
+    skipped_links = []
 
     article_dir = Path(article["id"])
     article_dir.mkdir(exist_ok=True)
@@ -134,7 +148,6 @@ async def download_article_media(article: dict):
     # iterate over each media of this article
     async with aiohttp.ClientSession(trust_env=True) as session:
         for idx, img_url in enumerate(article["media_links"]):
-
             if img_url and img_url[0] == "/":
                 # double //
                 img_url = img_url[1:] if img_url[1] == "/" else img_url
@@ -146,19 +159,21 @@ async def download_article_media(article: dict):
             # image metadata to be stored
             data = {
                 "Id": f"{article['id']}_{idx}",
-                "Image Path": str(article_dir/img_name),
+                "Image Path": str(article_dir / img_name),
                 "Article Id": article["id"],
                 "Article URL": article["url"],
                 "Article Index": idx,
                 "Image URL": img_url,
             }
 
-            if is_filterout_link(img_url):
-                filtered_links.append(data)
+            if is_skip_link(img_url):
+                skipped_links.append(data)
                 continue
 
             try:
-                _ = await asyncio.wait_for(download_img(session, img_url, article_dir/img_name), TIMEOUT)
+                _ = await asyncio.wait_for(
+                    download_img(session, img_url, article_dir / img_name), TIMEOUT
+                )
                 successful_img_list.append(data)
             except Exception as e:
                 # download failed for some reason
@@ -170,15 +185,16 @@ async def download_article_media(article: dict):
                 exceptions_img_list.append(data)
 
     write_dict_to_json_file(
-        article_dir/"successful_metadata.json", successful_img_list)
+        article_dir / "successful_metadata.json", successful_img_list
+    )
 
     if len(exceptions_img_list) > 0:
         write_dict_to_json_file(
-            article_dir/"exceptions_metadata.json", exceptions_img_list)
+            article_dir / "exceptions_metadata.json", exceptions_img_list
+        )
 
-    if len(filtered_links) > 0:
-        write_dict_to_json_file(
-            article_dir/"filtered_links.json", filtered_links)
+    if len(skipped_links) > 0:
+        write_dict_to_json_file(article_dir / "skipped_links.json", skipped_links)
 
     progress_bar.update()
 
@@ -201,11 +217,11 @@ async def main():
 
     tasks = []
     for article in metadata_slice:
-        task = asyncio.ensure_future(
-            download_article_media(article))
+        task = asyncio.ensure_future(download_article_media(article))
         tasks.append(task)
 
     await asyncio.gather(*tasks)
+
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()

@@ -3,6 +3,7 @@ from PIL import Image
 import json
 from pathlib import Path
 import argparse
+from download_asyncio import write_dict_to_json_file
 
 # argument parsing
 parser = argparse.ArgumentParser()
@@ -12,17 +13,6 @@ parser.add_argument(
 
 args = parser.parse_args()
 IMGDIR = Path(args.imgdir)
-
-
-def write_dict_to_json_file(json_file: Path, data_dicts: list[dict]):
-    """Write data dict to JSON file.
-
-    Args:
-        json_file (Path): JSON file path
-        data_dicts (list[dict]): List of dictionaries
-    """
-    with json_file.open("w") as f:
-        json.dump(data_dicts, f, indent=2)
 
 
 def move_img_file(img_data: dict, img_path: Path, subdir_name: str):
@@ -95,7 +85,7 @@ def filter_article_imgs(article_dir: Path):
         except FileNotFoundError as _:
             # the metadata file has the same URL multiple times for some articles,
             # so they have dupicate entries that may have been already filtered, or moved to corrupted
-            # not rentering them in `new_successful_metadata_dicts`
+            # * not rentering them in `new_successful_metadata_dicts`
             continue
         except:
             # handle corrupted image

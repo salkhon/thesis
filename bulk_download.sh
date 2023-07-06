@@ -47,7 +47,7 @@ for ((start_idx = start; start_idx < total_articles; start_idx += slice_len)); d
         end_idx=$total_articles
     fi
 
-    python3 scripts/download/download_asyncio.py \
+    python3 scripts/download_asyncio.py \
         --download-dir "$download_dir" \
         --metadata "$metadata" \
         --start-idx $start_idx \
@@ -56,17 +56,13 @@ for ((start_idx = start; start_idx < total_articles; start_idx += slice_len)); d
         --max-retry $max_retry
 
     echo "$start_idx to $end_idx complete"
-    python3 scripts/exceptions/count_exceptions.py --imgdir "$download_dir"
+    echo "Number of articles with exceptions: $(find "$download_dir" -type f -name exceptions_metadata.json | wc -l)"
     echo "Cooling down for $cooldown seconds"
     sleep $cooldown
 done
 
 echo -e "\n\nDOWNLOAD COMPLETE\n\n"
 
-# run file integrity test
-echo "Testing image integrity..."
-python3 ./scripts/filter/read_test.py --imgdir "$download_dir"
-
 # compile all exceptions from individual article directories
 echo "Compiling exceptions..."
-python3 ./scripts/exceptions/compile_exceptions.py --imgdir "$download_dir" --output "./all_exceptions.json"
+python3 ./scripts/compile_exceptions.py --imgdir "$download_dir" --output "./all_exceptions.json"
