@@ -4,9 +4,9 @@ import argparse
 
 # argument parsing
 parser = argparse.ArgumentParser()
-parser.add_argument("--imgdir", type=str,
+parser.add_argument("--imgdir", type=str, default="data/images/downloads/",
                     help="Directory where the images will be found")
-parser.add_argument("--output", type=str,
+parser.add_argument("--output", type=str, default="./",
                     help="Where to place the compilation")
 
 args = parser.parse_args()

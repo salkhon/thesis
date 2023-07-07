@@ -12,9 +12,9 @@ import argparse
 # argument parsing
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "--download-dir", type=str, help="Directory where the images will be downloaded"
+    "--download-dir", type=str, default="downloads/", help="Directory where the images will be downloaded"
 )
-parser.add_argument("--metadata", type=str, help="Metadata file of the article")
+parser.add_argument("--metadata", type=str, default="data/metadata/english.metadata", help="Metadata file of the article")
 parser.add_argument(
     "--start-idx", type=int, default=0, help="Starting index of article list slice"
 )
