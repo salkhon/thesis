@@ -3,11 +3,11 @@
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
-NC='\033[0m'  # No color
+NC='\033[0m' # No color
 
 # Default argument values
 slice_len=10000
-metadata_filepath="/home/salkhon/Documents/thesis/data/metadata/amharic.metadata"
+metadata_filepath="/home/salkhon/Documents/thesis/data/metadata/azerbaijani.metadata"
 img_download_dir="/home/salkhon/Documents/thesis/data/images"
 cooldown=$((2 * 60))
 max_retry=3
@@ -90,9 +90,12 @@ for ((start_idx = start; start_idx < total_articles; start_idx += slice_len)); d
         --max-retry $max_retry
 
     echo -e "\n${GREEN} Download Complete: Start Index: $start_idx\t End Index: $end_idx. ${NC}"
-    echo -e "${RED} Number of articles with exceptions: $(find "$img_download_dir" -type f -name exceptions_metadata.json | wc -l). ${RED}"
+    echo -e "${RED} Number of articles with exceptions: $(find "$img_download_dir" -type f -name exceptions_metadata.json | wc -l). ${NC}"
     echo -e "Cooling down for $cooldown seconds\n"
-    sleep $cooldown
+
+    if [[ $end_idx -lt $total_articles ]]; then
+        sleep $cooldown
+    fi
 done
 
 echo -e "${GREEN} \n\nDOWNLOAD COMPLETE\n\n ${NC}"
