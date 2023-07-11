@@ -12,9 +12,17 @@ import argparse
 # argument parsing
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "--download-dir", type=str, default="downloads/", help="Directory where the images will be downloaded"
+    "--download-dir",
+    type=str,
+    default="downloads/",
+    help="Directory where the images will be downloaded",
 )
-parser.add_argument("--metadata", type=str, default="data/metadata/english.metadata", help="Metadata file of the article")
+parser.add_argument(
+    "--metadata",
+    type=str,
+    default="data/metadata/english.metadata",
+    help="Metadata file of the article",
+)
 parser.add_argument(
     "--start-idx", type=int, default=0, help="Starting index of article list slice"
 )
@@ -102,12 +110,21 @@ def is_skip_link(imgurl: str) -> bool:
     Returns:
         bool: Should this download link be skipped
     """
-    return not imgurl.endswith(
-        (
-            "jpg",
-            "jpeg",
-            "png",
-            "gif",
+    return (
+        imgurl.endswith((".html", ".svg"))
+        or imgurl.startswith(
+            (
+                "https://platform.twitter.com",
+                "https://www.facebook.com",
+                "https://www.youtube.com",
+            )
+        )
+        or any(
+            substr in imgurl
+            for substr in [
+                "iframe.html",
+                "?",
+            ]
         )
     )
 
@@ -178,9 +195,11 @@ async def download_article_media(article: dict):
             except Exception as e:
                 # download failed for some reason
                 try:
+                    # delete partially downloaded file if any
                     Path(data["Image Path"]).unlink(missing_ok=True)
                 except:
                     pass
+
                 data["Exception"] = f"[Exception]: {str(e)}"
                 exceptions_img_list.append(data)
 

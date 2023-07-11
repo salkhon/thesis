@@ -14,13 +14,13 @@ CHUNK_SIZE = 20
 
 def read_metadata_file(path: Path) -> list[dict]:
     """Read metadata file, where each line contains a JSON. These JSONs are converted to pytho dicts, and a list
-    of dicts is returned. 
+    of dicts is returned.
 
     Args:
         path (Path): Path to metadata file. File should contain a JSON in each line.
 
     Returns:
-        list[dict]: List of JSONs in the metadata file, converted to List of Dictionaries. 
+        list[dict]: List of JSONs in the metadata file, converted to List of Dictionaries.
     """
     with path.open() as f:
         lines = f.readlines()
@@ -33,7 +33,7 @@ def read_metadata_file(path: Path) -> list[dict]:
 
 
 def download_img(url: str, path: Path):
-    """Download the image from the provided URL and store it in the given path. 
+    """Download the image from the provided URL and store it in the given path.
 
     Args:
         url (str): URL to the image
@@ -45,10 +45,10 @@ def download_img(url: str, path: Path):
 
 
 def download_article_media(article: dict):
-    """Download all the media of the provided article. Assign ID to each image, and map to it's article and 
-    relative position in the article. 
+    """Download all the media of the provided article. Assign ID to each image, and map to it's article and
+    relative position in the article.
 
-    If download failed, Exception string is stored in the metadata. 
+    If download failed, Exception string is stored in the metadata.
 
     - Has to be a stateless function for parallelism
 
@@ -68,23 +68,23 @@ def download_article_media(article: dict):
         # image metadata to be stored
         data = {
             "Id": f"{article['id']}_{idx}",
-            "Image Path": str(article_dir/img_name),
+            "Image Path": str(article_dir / img_name),
             "Article Id": article["id"],
             "Article Index": idx,
             "Image URL": img_url,
-            "Exception": ""
+            "Exception": "",
         }
 
         # try to download image, if not possible store exception string
         try:
-            download_img(img_url, article_dir/img_name)
+            download_img(img_url, article_dir / img_name)
         except Exception as e:
             data["Exception"] = str(e)
             print(f"Exception on article: {article['id']}, image: {img_name}")
         finally:
             img_data_list.append(data)
 
-    img_metadata_file = article_dir/"metadata.json"
+    img_metadata_file = article_dir / "metadata.json"
     with img_metadata_file.open("w") as f:
         json.dump(img_data_list, f, indent=2)
 
@@ -92,7 +92,10 @@ def download_article_media(article: dict):
 if __name__ == "__main__":
     print("reading metadata...")
     metadata = read_metadata_file(
-        Path("/home/salkhon/repo/Thesis/data/complete_bbc_data/media_metadata/english.metadata"))
+        Path(
+            "/home/salkhon/repo/Thesis/data/complete_bbc_data/media_metadata/english.metadata"
+        )
+    )
     print(f"metadata read, there are {len(metadata)} articles")
     # downloads will be placed in this directory
     os.chdir("/home/salkhon/repo/Thesis/downloads")
@@ -101,5 +104,10 @@ if __name__ == "__main__":
 
     metadata_slice = metadata[article_slice]
     with Pool(POOL_SIZE) as p:
-        for _ in tqdm(p.imap_unordered(download_article_media, metadata_slice, chunksize=CHUNK_SIZE), total=len(metadata_slice)):
+        for _ in tqdm(
+            p.imap_unordered(
+                download_article_media, metadata_slice, chunksize=CHUNK_SIZE
+            ),
+            total=len(metadata_slice),
+        ):
             pass

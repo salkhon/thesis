@@ -10,7 +10,10 @@ from download_asyncio import read_metadata_file
 # argument parsing
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "--metadata", type=str, default="data/metadata/english.metadata", help="Article original metadata file"
+    "--metadata",
+    type=str,
+    default="data/metadata/english.metadata",
+    help="Article original metadata file",
 )
 parser.add_argument(
     "--imgdir",
@@ -113,15 +116,19 @@ def get_image_status_and_mdata(
         return "SKIPPED", skipped_mdata[idx]
     elif (idx := find_idx("Id", img_id, exceptions_mdata)) >= 0:
         return "EXCEPTION", exceptions_mdata[idx]
-    elif ((idx := find_idx("Id", img_id, filtered_mdata)) >= 0) or ((idx := find_idx("Image URL", img_url, filtered_mdata)) >= 0):
+    elif ((idx := find_idx("Id", img_id, filtered_mdata)) >= 0) or (
+        (idx := find_idx("Image URL", img_url, filtered_mdata)) >= 0
+    ):
         # duplicate entry in article media links that was already filtered out before, were not found,
         # and thus dropped from all metadatas, so we check for them using URL
         return "FILTERED", filtered_mdata[idx]
-    elif ((idx := find_idx("Id", img_id, corrupted_mdata)) >= 0) or ((idx := find_idx("Image URL", img_url, corrupted_mdata)) >= 0):
+    elif ((idx := find_idx("Id", img_id, corrupted_mdata)) >= 0) or (
+        (idx := find_idx("Image URL", img_url, corrupted_mdata)) >= 0
+    ):
         return "CORRUPTED", corrupted_mdata[idx]
     else:
         return "MISSING", None
-    
+
 
 if __name__ == "__main__":
     print("reading metadata...")

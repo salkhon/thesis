@@ -8,7 +8,10 @@ from download_asyncio import write_dict_to_json_file
 # argument parsing
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "--imgdir", type=str, default="data/images/downloads/", help="Directory where the images will be found"
+    "--imgdir",
+    type=str,
+    default="data/images/downloads/",
+    help="Directory where the images will be found",
 )
 
 args = parser.parse_args()
