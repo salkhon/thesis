@@ -6,13 +6,13 @@ YELLOW='\033[0;33m'
 NC='\033[0m' # No color
 
 # Default argument values
-slice_len=10000
-metadata_filepath="/home/salkhon/Documents/thesis/data/metadata/azerbaijani.metadata"
+slice_len=500 #* lower slice for gujarati
+metadata_filepath="/home/salkhon/Documents/thesis/data/metadata/hindi.metadata"
 img_download_dir="/home/salkhon/Documents/thesis/data/images"
-cooldown=$((2 * 60))
+cooldown=5
 max_retry=3
 start=0
-timeout=$((10 * 60))
+timeout=$((5 * 60))
 
 # Process command-line arguments using getopts
 while getopts ":s:m:d:r:c:a:t:" opt; do
@@ -80,7 +80,7 @@ for ((start_idx = start; start_idx < total_articles; start_idx += slice_len)); d
         end_idx=$total_articles
     fi
 
-    echo -e "Starting download: Start Index: $start_idx\t End Index: $end_idx\n"
+    echo -e "\tStarting download: Start Index: $start_idx\t End Index: $end_idx\n"
     python3 scripts/download_asyncio.py \
         --download-dir "$img_download_dir" \
         --metadata "$metadata_filepath" \
@@ -89,13 +89,13 @@ for ((start_idx = start; start_idx < total_articles; start_idx += slice_len)); d
         --step 1 \
         --max-retry $max_retry
 
-    echo -e "\n${GREEN} Download Complete: Start Index: $start_idx\t End Index: $end_idx. ${NC}"
-    echo -e "${RED} Number of articles with exceptions: $(find "$img_download_dir" -type f -name exceptions_metadata.json | wc -l). ${NC}"
-    echo -e "Cooling down for $cooldown seconds\n"
+    echo -e "\n${GREEN}\tDownload Complete: Start Index: $start_idx\t End Index: $end_idx. ${NC}"
+    echo -e "${RED}\tNumber of articles with exceptions: $(find "$img_download_dir" -type f -name exceptions_metadata.json | wc -l). ${NC}"
+    echo -e "\tCooling down for $cooldown seconds\n"
 
     if [[ $end_idx -lt $total_articles ]]; then
         sleep $cooldown
     fi
 done
 
-echo -e "${GREEN} \n\nDOWNLOAD COMPLETE\n\n ${NC}"
+echo -e "${GREEN}\n\nDOWNLOAD COMPLETE\n\n ${NC}"

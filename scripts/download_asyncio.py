@@ -82,6 +82,7 @@ def read_metadata_file(path: Path) -> list[dict]:
 
 
 @tenacity.retry(
+    reraise=True,
     stop=tenacity.stop_after_attempt(MAX_RETRY),
     wait=tenacity.wait_random(min=3, max=10),
 )
