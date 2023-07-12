@@ -3,6 +3,9 @@ import argparse
 from multiprocessing import Pool
 from download_asyncio import read_metadata_file
 from pathlib import Path
+from tqdm.contrib.concurrent import process_map
+from tqdm import tqdm
+from colorama import Fore
 
 ################################## argument parsing ###########################################
 parser = argparse.ArgumentParser()
@@ -15,7 +18,7 @@ parser.add_argument(
 parser.add_argument(
     "--metadata-path",
     type=str,
-    default="/home/salkhon/Documents/thesis/data/metadata/igbo.metadata",
+    default="/home/salkhon/Documents/thesis/data/metadata/pidgin.metadata",
     help="Path to metadata file of the article",
 )
 parser.add_argument(
@@ -34,7 +37,7 @@ parser.add_argument(
     "--timeout", type=int, default=300, help="Timeout for download request, in seconds"
 )
 parser.add_argument(
-    "--maxproc", type=int, default=6, help="Maximum number of concurrent processes"
+    "--maxproc", type=int, default=None, help="Maximum number of concurrent processes"
 )
 
 
@@ -50,22 +53,21 @@ MAXPROC = args.maxproc
 
 
 def execute_async_download_script(arg_dict):
-    print(
-        f"Spawning download process: \n\tStart Index {arg_dict['start_idx']}\t End Index: {arg_dict['end_idx']}"
-    )
     subprocess.call(
         f"""
         python3 scripts/download_asyncio.py \
-        --download-dir "{arg_dict['download-dir']}" \
+        --download-dir "{arg_dict['download_dir']}" \
         --metadata "{arg_dict['metadata']}" \
         --start-idx {arg_dict['start_idx']} \
         --end-idx {arg_dict['end_idx']} \
         --step 1 \
-        --max-retry {arg_dict['max-retry']} \
-        --timeout {arg_dict['timeout']}
+        --max-retry {arg_dict['max_retry']} \
+        --timeout {arg_dict['timeout']} \
         """,
         shell=True,
+        stdout=subprocess.DEVNULL,
     )
+    return (arg_dict["start_idx"], arg_dict["end_idx"])
 
 
 if __name__ == "__main__":
@@ -76,18 +78,37 @@ if __name__ == "__main__":
 
     mdata_dict = read_metadata_file(METADATA_FILEPATH)
     total_articles = len(mdata_dict)
+    print(f"Total metadata for {lang}:", total_articles)
 
     async_script_args = [
         {
-            "download-dir": lang_subdir,
+            "download_dir": lang_subdir,
             "metadata": METADATA_FILEPATH,
             "start_idx": start_idx,
             "end_idx": min(start_idx + SLICE_LEN, total_articles),
-            "max-retry": MAX_RETRY,
+            "max_retry": MAX_RETRY,
             "timeout": TIMEOUT,
         }
         for start_idx in range(0, total_articles, SLICE_LEN)
     ]
-    with Pool(MAXPROC) as pool:
-        for res in pool.imap(execute_async_download_script, async_script_args):
-            print(f"Process result: {res}")
+
+    num_subproc = len(async_script_args)
+    print("Number of subprocesses:", num_subproc)
+
+    with Pool(MAXPROC, initializer=tqdm.set_lock, initargs=(tqdm.get_lock(),)) as pool:
+        pool.map(execute_async_download_script, async_script_args)
+
+    # process_map(execute_async_download_script, async_script_args, max_workers=MAXPROC)
+
+    # Find exception count
+    find_exception_articles_command = (
+        f"find '{lang_subdir}' -type f -name exceptions_metadata.json | wc -l"
+    )
+    find_proc = subprocess.Popen(
+        find_exception_articles_command, shell=True, stdout=subprocess.PIPE
+    )
+    output, _ = find_proc.communicate()
+    print(
+        Fore.RED, f"Number of articles with exceptions: {output.decode()}", Fore.RESET
+    )
+    print(Fore.GREEN, "DOWNLOAD COMPLETE", Fore.RESET)

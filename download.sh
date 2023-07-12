@@ -6,8 +6,8 @@ YELLOW='\033[0;33m'
 NC='\033[0m' # No color
 
 # Default argument values
-slice_len=500 #* lower slice for gujarati
-metadata_filepath="/home/salkhon/Documents/thesis/data/metadata/hindi.metadata"
+slice_len=500
+metadata_filepath="/home/salkhon/Documents/thesis/data/metadata/indonesian.metadata"
 img_download_dir="/home/salkhon/Documents/thesis/data/images"
 cooldown=5
 max_retry=3

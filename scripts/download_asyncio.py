@@ -41,6 +41,7 @@ parser.add_argument(
 parser.add_argument(
     "--timeout", type=int, default=600, help="Timeout for download request, in seconds"
 )
+parser.add_argument("--quiet", action="store_true", help="Don't print progressbar")
 
 args = parser.parse_args()
 
@@ -52,6 +53,7 @@ END_IDX = args.end_idx
 STEP = args.step
 MAX_RETRY = args.max_retry
 TIMEOUT = args.timeout
+QUIET = args.quiet
 ############################################################################################
 
 # there are 320722 articles
@@ -217,24 +219,33 @@ async def download_article_media(article: dict):
     if len(skipped_links) > 0:
         write_dict_to_json_file(article_dir / "skipped_links.json", skipped_links)
 
-    progress_bar.update()
+    if not QUIET:
+        progress_bar.update()
 
 
 async def main():
     print(f"Download from {START_IDX} to {END_IDX}...")
-    print("reading metadata...")
     metadata = read_metadata_file(METADATA_FILE)
-    print(f"metadata read, there are {len(metadata)} articles")
+    total_articles = len(metadata)
+    print(f"metadata read, there are {total_articles} articles")
+
     # downloads will be placed in this directory
     DOWNLOAD_DIR.mkdir(exist_ok=True)
     os.chdir(DOWNLOAD_DIR)
 
-    print("Starting downloads...")
-    print("Heads up: Download will be slow at start and end.")
     metadata_slice = metadata[article_slice]
 
-    global progress_bar
-    progress_bar = tqdm(total=len(metadata_slice))
+    if not QUIET:
+        global progress_bar
+        slice_len = END_IDX - START_IDX
+        pos = START_IDX // slice_len
+        progress_bar = tqdm(
+            total=len(metadata_slice),
+            desc=f"[{START_IDX}, {END_IDX})",
+            position=pos,
+            leave=True,
+            dynamic_ncols=True,
+        )
 
     tasks = []
     for article in metadata_slice:
@@ -242,6 +253,9 @@ async def main():
         tasks.append(task)
 
     await asyncio.gather(*tasks)
+
+    if not QUIET:
+        progress_bar.close()
 
 
 if __name__ == "__main__":
