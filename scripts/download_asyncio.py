@@ -237,14 +237,13 @@ async def main():
 
     if not QUIET:
         global progress_bar
-        slice_len = END_IDX - START_IDX
-        pos = START_IDX // slice_len
+        pos = ((START_IDX // 500) % 10) + 1
         progress_bar = tqdm(
             total=len(metadata_slice),
             desc=f"[{START_IDX}, {END_IDX})",
             position=pos,
-            leave=True,
-            dynamic_ncols=True,
+            leave=False,
+            dynamic_ncols=True
         )
 
     tasks = []

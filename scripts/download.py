@@ -18,7 +18,7 @@ parser.add_argument(
 parser.add_argument(
     "--metadata-path",
     type=str,
-    default="/home/salkhon/Documents/thesis/data/metadata/pidgin.metadata",
+    default="/home/salkhon/Documents/thesis/data/metadata/swahili.metadata",
     help="Path to metadata file of the article",
 )
 parser.add_argument(
@@ -96,7 +96,14 @@ if __name__ == "__main__":
     print("Number of subprocesses:", num_subproc)
 
     with Pool(MAXPROC, initializer=tqdm.set_lock, initargs=(tqdm.get_lock(),)) as pool:
-        pool.map(execute_async_download_script, async_script_args)
+        for res in tqdm(
+            pool.imap(execute_async_download_script, async_script_args),
+            total=num_subproc,
+            desc="TOTAL",
+            position=0,
+            dynamic_ncols=True
+        ):
+            pass
 
     # process_map(execute_async_download_script, async_script_args, max_workers=MAXPROC)
 
@@ -111,4 +118,4 @@ if __name__ == "__main__":
     print(
         Fore.RED, f"Number of articles with exceptions: {output.decode()}", Fore.RESET
     )
-    print(Fore.GREEN, "DOWNLOAD COMPLETE", Fore.RESET)
+    print(Fore.GREEN, f"DOWNLOAD COMPLETE FOR {lang}", Fore.RESET)

@@ -7,7 +7,7 @@ NC='\033[0m' # No color
 
 # Default argument values
 slice_len=500
-metadata_filepath="/home/salkhon/Documents/thesis/data/metadata/indonesian.metadata"
+metadata_filepath="/home/salkhon/Documents/thesis/data/metadata/punjabi.metadata"
 img_download_dir="/home/salkhon/Documents/thesis/data/images"
 cooldown=5
 max_retry=3
