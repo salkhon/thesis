@@ -9,7 +9,7 @@ import tenacity
 import aiofiles
 import argparse
 
-# argument parsing
+################################## argument parsing ###########################################
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "--download-dir",
@@ -52,6 +52,7 @@ END_IDX = args.end_idx
 STEP = args.step
 MAX_RETRY = args.max_retry
 TIMEOUT = args.timeout
+############################################################################################
 
 # there are 320722 articles
 article_slice = slice(START_IDX, END_IDX, STEP)
