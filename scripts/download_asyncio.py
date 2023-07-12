@@ -243,7 +243,7 @@ async def main():
             desc=f"[{START_IDX}, {END_IDX})",
             position=pos,
             leave=False,
-            dynamic_ncols=True
+            dynamic_ncols=True,
         )
 
     tasks = []

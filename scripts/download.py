@@ -18,7 +18,7 @@ parser.add_argument(
 parser.add_argument(
     "--metadata-path",
     type=str,
-    default="/home/salkhon/Documents/thesis/data/metadata/swahili.metadata",
+    default="/home/salkhon/Documents/thesis/data/metadata/yoruba.metadata",
     help="Path to metadata file of the article",
 )
 parser.add_argument(
@@ -101,7 +101,7 @@ if __name__ == "__main__":
             total=num_subproc,
             desc="TOTAL",
             position=0,
-            dynamic_ncols=True
+            dynamic_ncols=True,
         ):
             pass
 
