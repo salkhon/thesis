@@ -53,7 +53,7 @@ language="${language%.*}"
 img_download_dir="$img_download_dir/$language"
 
 # Confirm parameters
-config_str="Configurations:
+config_str="Seqeuntial Download Configurations:
 \tImage Download Directory: $img_download_dir
 \tMetdata File: $metadata_filepath
 \tLanguage: $language

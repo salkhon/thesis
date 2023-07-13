@@ -18,7 +18,7 @@ parser.add_argument(
 parser.add_argument(
     "--metadata-path",
     type=str,
-    default="/home/salkhon/Documents/thesis/data/metadata/yoruba.metadata",
+    default="/home/salkhon/Documents/thesis/data/metadata/chinese_simplified.metadata",
     help="Path to metadata file of the article",
 )
 parser.add_argument(
@@ -34,7 +34,7 @@ parser.add_argument(
     help="Number of files downloaded by a single async process",
 )
 parser.add_argument(
-    "--timeout", type=int, default=300, help="Timeout for download request, in seconds"
+    "--timeout", type=int, default=500, help="Timeout for download request, in seconds"
 )
 parser.add_argument(
     "--maxproc", type=int, default=None, help="Maximum number of concurrent processes"
@@ -70,19 +70,24 @@ def execute_async_download_script(arg_dict):
     return (arg_dict["start_idx"], arg_dict["end_idx"])
 
 
+def count_exceptions(img_dir: Path) -> int:
+    count = 0
+    for item in img_dir.rglob("exceptions_metadata.json"):
+        if item.is_file():
+            count += 1
+    return count
+
+
 if __name__ == "__main__":
-    # Creating subdirectory for article language
     lang = METADATA_FILEPATH.stem
-    lang_subdir = DOWNLOAD_DIR / lang
-    lang_subdir.mkdir(exist_ok=True)
+    lang_img_subdir = DOWNLOAD_DIR / lang
 
     mdata_dict = read_metadata_file(METADATA_FILEPATH)
     total_articles = len(mdata_dict)
-    print(f"Total metadata for {lang}:", total_articles)
 
     async_script_args = [
         {
-            "download_dir": lang_subdir,
+            "download_dir": lang_img_subdir,
             "metadata": METADATA_FILEPATH,
             "start_idx": start_idx,
             "end_idx": min(start_idx + SLICE_LEN, total_articles),
@@ -93,29 +98,41 @@ if __name__ == "__main__":
     ]
 
     num_subproc = len(async_script_args)
-    print("Number of subprocesses:", num_subproc)
+
+    print(
+        f"""
+    Multiprocess Download Configuration:
+        Image Download Directory: {lang_img_subdir}, 
+        Metadata File: {METADATA_FILEPATH}, 
+        Language: {lang}, 
+        Total Number of Articles: {total_articles}, 
+        Slice Length: {SLICE_LEN}, 
+        Timeout: {TIMEOUT}, 
+        Max Retry: {MAX_RETRY}, 
+        Number of Total Subprocesses: {num_subproc}
+    """
+    )
+    _ = input(Fore.YELLOW + "Press ENTER to proceed... (Ctrl+C to cancel)" + Fore.RESET)
+
+    lang_img_subdir.mkdir(exist_ok=True)
 
     with Pool(MAXPROC, initializer=tqdm.set_lock, initargs=(tqdm.get_lock(),)) as pool:
-        for res in tqdm(
-            pool.imap(execute_async_download_script, async_script_args),
-            total=num_subproc,
-            desc="TOTAL",
-            position=0,
-            dynamic_ncols=True,
-        ):
-            pass
-
-    # process_map(execute_async_download_script, async_script_args, max_workers=MAXPROC)
+        _ = list(
+            tqdm(
+                pool.imap_unordered(execute_async_download_script, async_script_args),
+                total=num_subproc,
+                desc="TOTAL",
+                position=0,
+                colour="green",
+                dynamic_ncols=True,
+            )
+        )
 
     # Find exception count
-    find_exception_articles_command = (
-        f"find '{lang_subdir}' -type f -name exceptions_metadata.json | wc -l"
-    )
-    find_proc = subprocess.Popen(
-        find_exception_articles_command, shell=True, stdout=subprocess.PIPE
-    )
-    output, _ = find_proc.communicate()
+    articles_with_exceptions = count_exceptions(lang_img_subdir)
     print(
-        Fore.RED, f"Number of articles with exceptions: {output.decode()}", Fore.RESET
+        Fore.RED,
+        f"Number of articles with exceptions: {articles_with_exceptions}",
+        Fore.RESET,
     )
     print(Fore.GREEN, f"DOWNLOAD COMPLETE FOR {lang}", Fore.RESET)

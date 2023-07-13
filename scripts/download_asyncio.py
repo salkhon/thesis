@@ -69,8 +69,8 @@ def get_base_url(url: str) -> str:
 
 
 def read_metadata_file(path: Path) -> list[dict]:
-    """Read metadata file, where each line contains a JSON. These JSONs are converted to pytho dicts, and a list
-    of dicts is returned.
+    """Read metadata file, where each line contains a JSON. These JSONs are converted to pytho dicts,
+    and a list of dicts is returned.
 
     Args:
         path (Path): Path to metadata file. File should contain a JSON in each line.
@@ -149,8 +149,9 @@ async def download_article_media(article: dict):
     relative position in the article.
 
     Each downloaded media is stored in a directory named by it's article ID. Each directory consists of the media
-    files and metadata files. The images that were successfully downloaded have their metadata in `successful_metadata.json`,
-    and the images that failed for some reason have their metadata in `exceptions_metadata.json` for each article.
+    files and metadata files. The images that were successfully downloaded have their metadata in
+    `successful_metadata.json`, and the images that failed for some reason have their metadata in
+    `exceptions_metadata.json` for each article.
 
     - Has to be a stateless function for parallelism
 
@@ -237,7 +238,8 @@ async def main():
 
     if not QUIET:
         global progress_bar
-        pos = ((START_IDX // 500) % 10) + 1
+        nrows = 8
+        pos = ((START_IDX // 500) % nrows) + 1
         progress_bar = tqdm(
             total=len(metadata_slice),
             desc=f"[{START_IDX}, {END_IDX})",
